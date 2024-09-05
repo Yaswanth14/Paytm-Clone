@@ -3,7 +3,7 @@ const zod = require("zod");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const router = express.Router();
-const { User } = require("../db");
+const { User, Account } = require("../db");
 const { authMiddleware } = require("../middleware");
 
 const signUpSchema = zod.object({
@@ -32,16 +32,14 @@ router.post("/signup", async (req, res) => {
   }
 
   const dbUser = await User.create(body);
-  const token = jwt.sign(
-    {
-      userId: dbUser._id,
-    },
-    process.env.JWT_SECRET
-  );
+  const userId = dbUser._id;
 
+  await Account.create({
+    userId,
+    balance: 1 + Math.random() * 10000,
+  });
   res.json({
     message: "User created successfully",
-    token: token,
   });
 });
 
@@ -92,6 +90,34 @@ router.put("/", authMiddleware, async (req, res) => {
   await User.updateOne(req.body, { _id: req.userId });
 
   res.json({ message: "Updated succesfully" });
+});
+
+router.get("/bulk", async (req, res) => {
+  const filter = req.query.filter || "";
+
+  const users = await User.find({
+    $or: [
+      {
+        firstName: {
+          $regex: filter,
+        },
+      },
+      {
+        lastname: {
+          $regex: filter,
+        },
+      },
+    ],
+  });
+
+  res.json({
+    users: users.map((user) => ({
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      _id: user._id,
+    })),
+  });
 });
 
 module.exports = router;
