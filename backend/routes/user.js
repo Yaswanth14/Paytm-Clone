@@ -13,34 +13,39 @@ const signUpSchema = zod.object({
   lastName: zod.string(),
 });
 router.post("/signup", async (req, res) => {
-  const body = req.body;
-  const { success } = signUpSchema.safeParse(req.body);
-  if (!success) {
-    return res.json({
-      message: "Incorrect inputs",
+  try {
+    const body = req.body;
+    const { success } = signUpSchema.safeParse(req.body);
+    if (!success) {
+      return res.json({
+        message: "Incorrect inputs",
+      });
+    }
+
+    const user = User.findOne({
+      username: body.username,
     });
-  }
 
-  const user = User.findOne({
-    username: body.username,
-  });
+    if (user) {
+      return res.json({
+        message: "User already exists",
+      });
+    }
 
-  if (user._id) {
-    return res.json({
-      message: "User already exists",
+    const dbUser = await User.create(body);
+    const userId = dbUser._id;
+
+    await Account.create({
+      userId,
+      balance: 1 + Math.floor(Math.random() * 10000),
     });
+    res.json({
+      message: "User created successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({ message: "Error occured in sign in" });
   }
-
-  const dbUser = await User.create(body);
-  const userId = dbUser._id;
-
-  await Account.create({
-    userId,
-    balance: 1 + Math.floor(Math.random() * 10000),
-  });
-  res.json({
-    message: "User created successfully",
-  });
 });
 
 const signInSchema = zod.object({
@@ -92,6 +97,7 @@ router.put("/", authMiddleware, async (req, res) => {
   res.json({ message: "Updated succesfully" });
 });
 
+// add debouncing
 router.get("/bulk", async (req, res) => {
   const filter = req.query.filter || "";
 

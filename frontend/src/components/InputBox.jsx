@@ -1,6 +1,6 @@
 import React from "react";
 
-const InputBox = ({ name, type, placeholder }) => {
+const InputBox = ({ name, type, placeholder, onChange }) => {
   return (
     <div>
       <label
@@ -13,6 +13,7 @@ const InputBox = ({ name, type, placeholder }) => {
         type={type}
         name={name}
         id={name}
+        onChange={onChange}
         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
         placeholder={placeholder}
         required
